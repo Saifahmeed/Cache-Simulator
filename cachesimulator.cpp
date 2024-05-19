@@ -19,8 +19,8 @@ struct Simulator {
     unsigned int indexLength;
     unsigned int offsetLength;
     unsigned int cycleTime;
-    unsigned int hits;
-    unsigned int misses;
+    double hits;
+    double misses;
     unsigned int tagLength;
     unsigned int accessCount;
 };
@@ -35,6 +35,10 @@ struct CacheHierarchy {
 int AMAT(const CacheHierarchy &cacheHierarchy) { 
 	return cacheHierarchy.totalCycles / cacheHierarchy.totalAccesses; 
 }
+
+//double hit(const Simulator &ctrl) {
+//	return ctrl.hits/ctrl.accessCount * 100; 
+//}
 
 void displayCacheStatus(const Simulator &ctrl, const CacheHierarchy &cacheHierarchy) {
 	cout << std::fixed << std::setprecision(2);
@@ -51,9 +55,11 @@ void displayCacheStatus(const Simulator &ctrl, const CacheHierarchy &cacheHierar
     cout << "Hits: " << ctrl.hits << endl;
     cout << "Misses: " << ctrl.misses << endl;
     cout << "Hit Ratio: " << ctrl.hits/ctrl.accessCount * 100 << "%" << endl;
-    cout << "Miss Ratio: " << ctrl.misses/ctrl.accessCount * 100 << "%" << endl;
+    cout << "Miss Ratio: " << static_cast<double>(ctrl.misses) / ctrl.accessCount * 100 << "%" << endl;
     cout << "AMAT (Average Memory Access Time): " << AMAT(cacheHierarchy) << " cycles" << endl;
+    cout << endl;
 }
+
 
 
 bool isPowerOfTwo(int x) {
@@ -100,6 +106,7 @@ int main() {
     //initializing Cache Hierarchy
     Simulator ctrl;
     CacheHierarchy cacheHierarchy;
+  
     for (int i = 0; i < cacheSizes.size(); ++i) {
        	//Simulator ctrl;
         ctrl.accessCount = ctrl.hits = ctrl.misses = 0;
@@ -133,15 +140,19 @@ int main() {
     vector<Simulator> &currentCaches = (accessType == 'I') ? cacheHierarchy.instructionCache : cacheHierarchy.dataCache;
         for (int i = 0; i < currentCaches.size(); ++i) {
         currentCycleTime += cycleTimes[i];
+    
         unsigned int offsetMask = (1 << currentCaches[i].offsetLength) - 1;
         unsigned int addressWithoutOffset = address >> currentCaches[i].offsetLength;
         unsigned int indexMask = (1 << currentCaches[i].indexLength) - 1;
         unsigned int index = addressWithoutOffset & indexMask;
         unsigned int tag = address >> (currentCaches[i].indexLength + currentCaches[i].offsetLength);
+      
         currentCaches[i].accessCount++;
+    
         if (currentCaches[i].memory[index].validBit && currentCaches[i].memory[index].tag == tag) {
             currentCaches[i].hits++;
             cacheLevel = i;
+      
             break;
         } else {
             currentCaches[i].misses++;
@@ -157,6 +168,7 @@ int main() {
     cacheHierarchy.totalCycles += currentCycleTime*(cacheLevel+1); 
     displayCacheStatus(ctrl, cacheHierarchy);
     }
+    
     inputFile.close();
     
     return 0;
