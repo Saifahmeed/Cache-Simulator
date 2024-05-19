@@ -7,7 +7,6 @@
 
 using namespace std;
 
-
 struct Line {
     bool validBit;
     unsigned int tag;
@@ -18,9 +17,9 @@ struct Simulator {
     unsigned int lineCount;
     unsigned int indexLength;
     unsigned int offsetLength;
-    unsigned int cycleTime;
     double hits;
     double misses;
+    unsigned int cycleTime;
     unsigned int tagLength;
     unsigned int accessCount;
 };
@@ -28,149 +27,163 @@ struct Simulator {
 struct CacheHierarchy {
     unsigned int totalCycles;
     unsigned int totalAccesses;
+    double totalHits;
+    double totalMisses; 
     vector<Simulator> instructionCache;
     vector<Simulator> dataCache;
 };
 
 int AMAT(const CacheHierarchy &cacheHierarchy) { 
-	return cacheHierarchy.totalCycles / cacheHierarchy.totalAccesses; 
+    return cacheHierarchy.totalCycles / cacheHierarchy.totalAccesses; 
 }
 
-//double hit(const Simulator &ctrl) {
-//	return ctrl.hits/ctrl.accessCount * 100; 
-//}
-
-void displayCacheStatus(const Simulator &ctrl, const CacheHierarchy &cacheHierarchy) {
-	cout << std::fixed << std::setprecision(2);
-
+void displayCacheStatus(const CacheHierarchy &cacheHierarchy) {
+    cout << std::fixed << std::setprecision(2);
+    cout << "Instruction Cache: " << endl;
     cout << "Cache Entry Info:" << endl;
     cout << "=================" << endl;
+    for (const auto &sim : cacheHierarchy.instructionCache) {			// for every level of instruction cache
+        for (const auto &entry : sim.memory) {							// for every entry in memory
+           if (entry.validBit) {										// display only if valid bit is 1
+                cout << "Valid bit: " << entry.validBit << "\t";
+                cout << "Tag: " << entry.tag << endl;
+            }
+        }
+    }
+    cout << endl;
+    cout << "Data Cache: " << endl;
+    cout << "Cache Entry Info:" << endl;
+    cout << "=================" << endl;
+    for (const auto &sim : cacheHierarchy.dataCache) {
+        for (const auto &entry : sim.memory) {
+            if (entry.validBit) {
+                cout << "Valid bit: " << entry.validBit << "\t";
+                cout << "Tag: " << entry.tag << endl;
+            }
+        }
+    }
+  	cout << endl;
+    cout << "Total Accesses: " << cacheHierarchy.totalAccesses << endl;
+    cout << "Hit ratio " << cacheHierarchy.totalHits/cacheHierarchy.totalAccesses * 100 << "%" << endl;
+    cout << "Miss ratio " << cacheHierarchy.totalMisses/cacheHierarchy.totalAccesses * 100 << "%" <<  endl;
     cout << "Cache Statistics:" << endl;
     cout << "=================" << endl;
-    for (auto &entry : ctrl.memory) {
-    cout << "Valid bit: " << entry.validBit << "\t";
-    cout << "Tag: " << entry.tag << endl;
-}
-    cout << "Total Accesses: " << ctrl.accessCount << endl;
-    cout << "Hits: " << ctrl.hits << endl;
-    cout << "Misses: " << ctrl.misses << endl;
-    cout << "Hit Ratio: " << ctrl.hits/ctrl.accessCount * 100 << "%" << endl;
-    cout << "Miss Ratio: " << static_cast<double>(ctrl.misses) / ctrl.accessCount * 100 << "%" << endl;
     cout << "AMAT (Average Memory Access Time): " << AMAT(cacheHierarchy) << " cycles" << endl;
-    cout << endl;
+    cout << "==================\n" << endl;
 }
-
-
 
 bool isPowerOfTwo(int x) {
     return (x > 0) && ((x & (x - 1)) == 0);
 }
+
 int main() {
-    // input from user
     vector<unsigned int> blockSizes, cacheSizes, cycleTimes;
     unsigned int numLevels;
-    do{ cout << "Specify the number of cache levels: ";
+
+    do { 
+        cout << "Specify the number of cache levels: ";
         cin >> numLevels;
-        if (numLevels < 1){
-        cout << "Error: Number of levels must be at least 1.\n";
-    }}while (numLevels < 1) ;
+        if (numLevels < 1) {
+            cout << "Error: Number of levels must be at least 1.\n";
+        }
+    } while (numLevels < 1);
+
     for (int i = 0; i < numLevels; ++i) {
         cout << "Enter details for level " << i + 1 << " Cache:\n";
         unsigned int size, block, cycles;
-    do {
-        cout << "Cache size (bytes): ";
-        cin >> size;
-        
-        if (!isPowerOfTwo(size)) {
-            cout << "Error: Cache size must be a power of 2.\n";
-        }
-    } while (!isPowerOfTwo(size));
-    do {
-        cout << "Block size (bytes): ";
-        cin >> block;
-        if (!isPowerOfTwo(block)) {
-            cout << "Error: Block size must be a power of 2.\n";
-        }
-    } while (!isPowerOfTwo(block));
-    do{ cout << "Access cycles: ";
-        cin >> cycles;
-        if (cycles < 1 || cycles > 10) {
-            cout << "Error: Access cycles must be between 1 and 10.\n";
-        }} 
-        while (cycles < 1 || cycles > 10);
+        do {
+            cout << "Cache size (bytes): ";
+            cin >> size;
+            if (!isPowerOfTwo(size)) {
+                cout << "Error: Cache size must be a power of 2.\n";
+            }
+        } while (!isPowerOfTwo(size));
+
+        do {
+            cout << "Block size (bytes): ";
+            cin >> block;
+            if (!isPowerOfTwo(block)) {
+                cout << "Error: Block size must be a power of 2.\n";
+            }
+        } while (!isPowerOfTwo(block));
+
+        do { 
+            cout << "Access cycles: ";
+            cin >> cycles;
+            if (cycles < 1 || cycles > 10) {
+                cout << "Error: Access cycles must be between 1 and 10.\n";
+            }
+        } while (cycles < 1 || cycles > 10);
+
         cacheSizes.push_back(size);
         blockSizes.push_back(block);
         cycleTimes.push_back(cycles);
     }
 
-    //initializing Cache Hierarchy
-    Simulator ctrl;
     CacheHierarchy cacheHierarchy;
-  
+
     for (int i = 0; i < cacheSizes.size(); ++i) {
-       	//Simulator ctrl;
-        ctrl.accessCount = ctrl.hits = ctrl.misses = 0;
-        ctrl.lineCount = cacheSizes[i] / blockSizes[i] ;
-        ctrl.indexLength = log2(ctrl.lineCount); // assigns the number of bits required to represent the index part of the memory address in a cache line.
-        ctrl.offsetLength = log2(blockSizes[i]);
-    for (unsigned int j = 0; j < ctrl.lineCount; j++) {
-         ctrl.memory.push_back(Line{});
-    }// making size of memory equal to the number of lines in the cache. 
-        ctrl.tagLength = 32 - ctrl.indexLength - ctrl.offsetLength; // assuming 32 bit memory address.
-        for (auto &entry : ctrl.memory) {
-        entry.validBit = false;
-        entry.tag = 0;
+        Simulator sim;
+        sim.accessCount = sim.hits = sim.misses = 0;
+        sim.lineCount = cacheSizes[i] / blockSizes[i];
+        sim.indexLength = log2(sim.lineCount);
+        sim.offsetLength = log2(blockSizes[i]);
+        sim.memory.resize(sim.lineCount, {false, 0});
+        sim.tagLength = 32 - sim.indexLength - sim.offsetLength;
+
+        cacheHierarchy.instructionCache.push_back(sim);
+        cacheHierarchy.dataCache.push_back(sim);
     }
-        cacheHierarchy.instructionCache.push_back(ctrl);
-        cacheHierarchy.dataCache.push_back(ctrl);
-    }
+
     cacheHierarchy.totalCycles = 0;
     cacheHierarchy.totalAccesses = 0;
 
-    //reading Input File
     string fileName = "sequence.txt";
     ifstream inputFile(fileName);
     unsigned int address;
     char accessType;
-   while (inputFile >> accessType >> address) {
-    cacheHierarchy.totalAccesses++;
-    int currentCycleTime = 0;
-    bool foundInCache = false;
-    int cacheLevel;  // to store what level you are in to calcualte miss penalty  
-    vector<Simulator> &currentCaches = (accessType == 'I') ? cacheHierarchy.instructionCache : cacheHierarchy.dataCache;
+
+    while (inputFile >> accessType >> address) {
+        cacheHierarchy.totalAccesses++;
+        int currentCycleTime = 0;
+        int cacheLevel = 0;
+        vector<Simulator> &currentCaches = (accessType == 'I') ? cacheHierarchy.instructionCache : cacheHierarchy.dataCache;
+
         for (int i = 0; i < currentCaches.size(); ++i) {
-        currentCycleTime += cycleTimes[i];
-    
-        unsigned int offsetMask = (1 << currentCaches[i].offsetLength) - 1;
-        unsigned int addressWithoutOffset = address >> currentCaches[i].offsetLength;
-        unsigned int indexMask = (1 << currentCaches[i].indexLength) - 1;
-        unsigned int index = addressWithoutOffset & indexMask;
-        unsigned int tag = address >> (currentCaches[i].indexLength + currentCaches[i].offsetLength);
-      
-        currentCaches[i].accessCount++;
-    
-        if (currentCaches[i].memory[index].validBit && currentCaches[i].memory[index].tag == tag) {
-            currentCaches[i].hits++;
-            cacheLevel = i;
-      
-            break;
-        } else {
-            currentCaches[i].misses++;
-            currentCaches[i].memory[index].validBit = true;
-            currentCaches[i].memory[index].tag = tag;
-            // if you reach the main memory and still no hits, add 100 to cycle time
-          if(i == currentCaches.size()-1) {
-          	currentCycleTime += 100; 
-		  }
+            currentCycleTime += cycleTimes[i];
+            unsigned int offsetMask = (1 << currentCaches[i].offsetLength) - 1;
+            unsigned int addressWithoutOffset = address >> currentCaches[i].offsetLength;
+            unsigned int indexMask = (1 << currentCaches[i].indexLength) - 1;
+            unsigned int index = addressWithoutOffset & indexMask;
+            unsigned int tag = address >> (currentCaches[i].indexLength + currentCaches[i].offsetLength);
+
+            cacheHierarchy.totalAccesses++;
+
+            if (currentCaches[i].memory[index].validBit && currentCaches[i].memory[index].tag == tag) {
+                  cacheHierarchy.totalHits++;
+                cacheLevel = i;
+                break;
+            } else {
+                 cacheHierarchy.totalMisses++;
+                currentCaches[i].memory[index].validBit = true;
+                currentCaches[i].memory[index].tag = tag;
+                cacheLevel = i;
+                if (i == currentCaches.size() - 1) {
+                    currentCycleTime += 100;
+                }
+            }
         }
+      //  cacheHierarchy.totalHits += currentCaches[cacheLevel].hits;					// get total number of hits from 
+      //  cacheHierarchy.totalMisses += currentCaches[cacheLevel].misses;
+        cacheHierarchy.totalCycles += currentCycleTime * (cacheLevel + 1);
+        displayCacheStatus(cacheHierarchy);
     }
-    // total cycles is the access time of each input * the cache level you're in 
-    cacheHierarchy.totalCycles += currentCycleTime*(cacheLevel+1); 
-    displayCacheStatus(ctrl, cacheHierarchy);
-    }
-    
+
     inputFile.close();
+
     
+   // displayCacheStatus(cacheHierarchy.dataCache, cacheHierarchy);
+
     return 0;
 }
 
