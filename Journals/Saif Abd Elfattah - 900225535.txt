@@ -1,8 +1,0 @@
-May 11th, 8:00 PM:
-Created the algorithm for our program
-Implemented the strcuts
-Implemented the read from file and handling the cahce part in the int main function.
-
-May 18th, 8:00 PM:
-Wrote the section of the report: test cases & issues 
-Fixed several bugs about handling input exceptions 
