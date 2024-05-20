@@ -1,7 +1,11 @@
-May 16, 5:00 pm: added display function and attempted to calculate amat
-May 16, 8:56 pm: attempted to display data and instruction caches for multilevel caches and to calculate hit/miss ratios
-May 17, 1:24 pm: debugged why total number of accesses and other information were not showing
-May 17, 3:00 pm: debugged why tag was not being calculated correctly for blocks of over size 1
-May 18, 11:00 am: wrote a brief description of implementation in report
-May 18, 1:00 pm: wrote a user guide on how to simulate program
-May 19, 11:00 pm: made the gui using qt 
+May 15, 2024  1:55PM: refining the user input section in the `main` function. Ensured all inputs are validated and properly handled, making the simulation more robust against incorrect input formats.
+
+May 15, 2024  2:55PM implementing the display outputs in the `main` function. Added detailed output for cache status after operations to help with debugging and understanding cache behaviors.
+
+May 19, 2024  12:00PM - writing the report sections on 'Description, Decisions & Assumptions'. Focused on clearly articulating the design choices and the rationale behind the architectural decisions, ensuring the report is comprehensive and informative.
+
+May 19, 2024  3:30PM- refactoring the code to enhance readability. Simplified complex functions and improved naming conventions to align with best practices in code clarity and maintainability.
+
+May 16, 2024 5:30PM- implement the bonus feature 5. 
+
+May 18, 2024 7:30PM- reviewing all changes made over the week.
